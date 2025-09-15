@@ -1,0 +1,37 @@
+name: Fetch and Process IPs
+
+on:
+  schedule:
+    # 每天北京时间早上8点运行（UTC时间0点）
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  fetch-ips:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          
+      - name: Fetch and process IPs
+        run: python scripts/process_ips.py
+        
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add output/*.txt
+          git diff --cached --quiet || git commit -m "Update IP lists $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
